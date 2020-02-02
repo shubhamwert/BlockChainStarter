@@ -1,4 +1,4 @@
-pragma solidity ^0.6.1;
+pragma solidity ^0.4.21;
 
 contract Funders{
     struct Person{
@@ -13,7 +13,7 @@ contract Funders{
         Stage public stage=Stage.Init;
     
     enum voteDetail{ Against, Favour}
-        voteDetail public votD=voteDetail.Against;
+        voteDetail private votD=voteDetail.Against;
     struct FundSeeker{
         uint id;
         address payable account;
@@ -23,7 +23,7 @@ contract Funders{
     }
     
     
-    mapping (address =>FundSeeker) fund_seekers;
+    mapping (address =>FundSeeker) fundWanter;
     uint countFunder=0;
     event FundsSended(address to,address from, uint value);
     // Person[] public funderList;
@@ -38,15 +38,20 @@ contract Funders{
         _;
     }
     modifier isRegisterd(){
-        require(funderList[msg.sender].account == msg.sender);
+        require(funderList[msg.sender].account == msg.sender,"you need to register first");
         _;
     }
     
     
     modifier isReqStage(address mid,Stage st){
-        require(fund_seekers[mid].nstage == st,"not the required state");
+        require(fundWanter[mid].nstage == st,"not in the required state");
         _;
         
+    }
+    
+    modifier hasalreadyVoted(){
+        require(!funderList[msg.sender].hasVoted,"you have already voted");
+        _;
     }
     
     // modifier hasSufficentBalance(){
@@ -73,35 +78,35 @@ contract Funders{
         }
     
     function registerFundi(address payable add) public isRegisterd payable{
-        // fund_seekers.push(FundSeeker(countFunder,add,0,Stage.Init,0));
-        fund_seekers[add].id=countFunder;
-        fund_seekers[add].account=add;
-        fund_seekers[add].balance=0;
-        fund_seekers[add].nstage=Stage.Init;
-        fund_seekers[add].voteCount=0;
+        // fundWanter.push(FundSeeker(countFunder,add,0,Stage.Init,0));
+        fundWanter[add].id=countFunder;
+        fundWanter[add].account=add;
+        fundWanter[add].balance=0;
+        fundWanter[add].nstage=Stage.Init;
+        fundWanter[add].voteCount=0;
         countFunder=countFunder+1;
     }    
     function sendFunds(address add) public payable isRegisterd{
         
-        fund_seekers[add].account.transfer(msg.value);
-        fund_seekers[add].balance = fund_seekers[add].balance+msg.value;
-        emit FundsSended(fund_seekers[add].account,msg.sender,msg.value);
+        fundWanter[add].account.transfer(msg.value);
+        fundWanter[add].balance = fundWanter[add].balance+msg.value;
+        emit FundsSended(fundWanter[add].account,msg.sender,msg.value);
         
         
     }
     
-    function initiateWithdrawal(address add) public isReqStage(add,Stage.Init) isRegisterd{
-        fund_seekers[add].nstage=Stage.Vote;
+    function initiateWithdrawal(address add) public isReqStage(add,Stage.Init) {
+        fundWanter[add].nstage=Stage.Vote;
         
     }
     
     function endWithdrawal(address add) public isReqStage(add,Stage.Vote){
-        fund_seekers[add].nstage=Stage.Done;
+        fundWanter[add].nstage=Stage.Done;
     }
     
-    function vote(address fundee_id,voteDetail v) public isReqStage(fundee_id,Stage.Vote) isRegisterd{
+    function vote(address fundeeAddress,voteDetail v) public isReqStage(fundeeAddress,Stage.Vote) isRegisterd hasalreadyVoted{
         if(v==voteDetail.Favour){
-            fund_seekers[fundee_id].voteCount+=1;
+            fundWanter[fundeeAddress].voteCount+=1;
             
         }
         funderList[msg.sender].hasVoted=true;
@@ -109,11 +114,11 @@ contract Funders{
         
     }
     function isAllowedToWithdraw(address id) public isReqStage(id,Stage.Done) payable returns(bool){
-        uint totalVotes=fund_seekers[id].voteCount;
-        if(totalVotes>minVotesReq){
+        uint totalVotes=fundWanter[id].voteCount;
+        if(totalVotes>=minVotesReq){
             return true;
         }
-        
+        return false;
     }
 }
 
@@ -126,31 +131,35 @@ contract Fundi{
     address account;
     uint collected_money;
     } 
-    bool canTakeMoney=false;
-    Person public Fund_seeker;
+    bool canTakeMoney=true;
+    Person public FundSeeker;
     event Receive(uint value);
     Funders contract_funder;
     constructor(string memory name) public payable{
-        Fund_seeker.id=0;
-        Fund_seeker.userName=name;
-        Fund_seeker.account=msg.sender;
-        Fund_seeker.collected_money=0;
+        FundSeeker.id=0;
+        FundSeeker.userName=name;
+        FundSeeker.account=msg.sender;
+        FundSeeker.collected_money=0;
         
     }
     modifier onlyAuth(){
-        require(msg.sender == Fund_seeker.account);
+        require(msg.sender == FundSeeker.account,"please use owner account");
+        _;
+    }
+    modifier canWithdraw(){
+        require(canTakeMoney,"you dont have sufficentBalance");
         _;
     }
     function getCollectedMoney() public onlyAuth payable returns(uint){
         emit Receive(msg.value);
-        Fund_seeker.collected_money=address(this).balance;
-        return Fund_seeker.collected_money;
+        FundSeeker.collected_money=address(this).balance;
+        return FundSeeker.collected_money;
         
         
     }
     
     function getAccOwner() public view returns(address){
-        return Fund_seeker.account;
+        return FundSeeker.account;
     }
     
     
@@ -158,6 +167,16 @@ contract Fundi{
         contract_funder=Funders(contract_id);
         // canTakeMoney=contract_funder.isAllowedToWithdraw();
         
+        
+    }
+    function initiateWithdrawal_Fundi() public onlyAuth payable{
+        contract_funder.initiateWithdrawal(msg.sender);
+    }
+    
+    function tranfer_to_self(address payable self_acc) public onlyAuth canWithdraw payable{
+        
+        self_acc.transfer(address(this).balance);
+        FundSeeker.collected_money=0;
         
     }
     
