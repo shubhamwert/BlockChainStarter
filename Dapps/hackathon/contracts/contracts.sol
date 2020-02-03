@@ -1,4 +1,4 @@
-pragma solidity ^0.4.21;
+pragma solidity ^0.5.15;
 
 contract Funders{
     struct Person{
@@ -65,7 +65,9 @@ contract Funders{
         }
     
 
-    receive () external payable{ }
+    // receive () external payable{ }
+    function() external payable { }
+
     function register(string memory name) public {
         // funderList.push(Person(count,name,msg.sender,false));
         funderList[msg.sender].id=count;
@@ -180,7 +182,10 @@ contract Fundi{
         
     }
     
-    receive () external payable{ }
+    // receive () external payable{ }
+
+    function() external payable { }
+
     
 }
 
