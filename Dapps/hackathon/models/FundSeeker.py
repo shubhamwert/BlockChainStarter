@@ -7,7 +7,7 @@ class FundSeeker:
         return self._name
 
     
-    def getacc(self):
+    def getAcc(self):
         return self._account
     
     def setAccbalance(bal):

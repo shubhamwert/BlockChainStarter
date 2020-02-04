@@ -7,7 +7,7 @@ class Funder:
         return self._name
 
     
-    def getacc(self):
+    def getAcc(self):
         return self._account
     
     def setAccbalance(bal):
@@ -18,3 +18,5 @@ class Funder:
 
     def addContractAddress(string):
         self.FunderContract=string
+    def __repr__():
+        return '<Funder Object with name : {}'.format(self.name)

@@ -1,8 +1,7 @@
 import utils.solcx_compiler as myCompiler
 import json
 if __name__ == "__main__":
-    address='contracts\contracts.sol'
-    files=[address]
+    files=[r'contracts\funder.sol',r'contracts\fundi.sol']
 
 
     compiledFiles=myCompiler.compileContracts(files)
