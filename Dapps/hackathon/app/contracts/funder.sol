@@ -1,4 +1,5 @@
 pragma solidity ^0.5.15;
+//Funder Contract
 
 contract Funders{
     struct Person{
@@ -112,14 +113,14 @@ contract Funders{
         // funderList[funder_id].hasVoted=true;
         
     }
-    function isAllowedToWithDraw(address id) public isReqStage(id,Stage.Done) payable returns(bool){
+    function isAllowedToWithDraw(address id) public payable returns(bool){
         uint totalVotes=fundWanter[id].voteCount;
-        if(totalVotes>=minVotesReq){
+        if(totalVotes>=minVotesReq && fundWanter[msg.sender].nstage==Stage.Done){
             return true;
         }
         return false;
     }
-    function getStage(address fundSeekerAddress) public returns(Stage){
+    function getStage(address fundSeekerAddress) public view returns(Stage){
         return fundWanter[fundSeekerAddress].nstage;
     }
 }

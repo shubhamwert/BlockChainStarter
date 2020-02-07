@@ -1,4 +1,5 @@
-class FundSeeker:
+#Model Class for Funder
+class Funder:
     def __init__(self,name:str,account):
         self._name=name
         self._account=account
@@ -14,7 +15,9 @@ class FundSeeker:
         self.bal=bal
 
     def addMoney(amt):
-        self.bal=self.bal+amt
-        
+        self.bal=amt
+
     def addContractAddress(string):
         self.FunderContract=string
+    def __repr__(self):
+        return '<Funder Object with name : {}'.format(self.name)
